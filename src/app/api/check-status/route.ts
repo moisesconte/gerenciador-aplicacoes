@@ -1,10 +1,13 @@
+import { prisma } from '@/lib/prisma'
 import type { NextRequest } from 'next/server'
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams
   const url = searchParams.get('url')
+  const appId = searchParams.get('app_id')
+  const date = new Date()
 
-  if (!url) {
+  if (!url || !appId) {
     return Response.json({ status: 'Invalid URL' })
   }
 
@@ -19,12 +22,30 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    console.log(response)
+    const status = response.ok || response.status >= 400 ? 'Online' : 'Offline'
+
+    if (status === 'Offline') {
+      await prisma.appChecks.create({
+        data: {
+          appId,
+          status: 'OFFLINE',
+        },
+      })
+    }
 
     return Response.json({
-      status: response.ok || response.status >= 400 ? 'Online' : 'Offline',
+      url,
+      status,
+      date,
     })
-  } catch {
-    return Response.json({ status: 'Offline' })
+  } catch (error) {
+    await prisma.appChecks.create({
+      data: {
+        appId,
+        status: 'OFFLINE',
+      },
+    })
+
+    return Response.json({ url, status: 'Offline', date })
   }
 }

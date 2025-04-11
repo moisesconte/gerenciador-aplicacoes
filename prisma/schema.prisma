@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum STATUS {
+  ONLINE
+  OFFLINE
+}
+
+model App {
+  id      String  @id @default(uuid())
+  name    String
+  url     String
+  actived Boolean @default(true)
+
+  appChecks AppChecks[]
+
+  @@map("apps")
+}
+
+model AppChecks {
+  id Int @id @default(autoincrement())
+
+  appId String @map("app_id")
+  app   App    @relation(fields: [appId], references: [id])
+
+  status    STATUS
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("app-checks")
+}
